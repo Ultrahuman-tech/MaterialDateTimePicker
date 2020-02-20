@@ -1,5 +1,8 @@
 package com.wdullaer.materialdatetimepicker.time;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.Nullable;
+
 /**
  * A collection of methods which need to be shared with all components of the TimePicker
  *
@@ -58,4 +61,23 @@ interface TimePickerController {
      * @return timepoint - the nearest valid timepoint
      */
     Timepoint roundToNearest(Timepoint time, Timepoint.TYPE type);
+
+    /**
+     * Get the color for the Clock Background. Pass {@code null} if default color scheme should be
+     * used.
+     *
+     * @return a {@link ColorInt} representing the background color for clock in time picker.
+     */
+    @Nullable
+    @ColorInt
+    Integer getCircleViewColor();
+
+    /**
+     * Provide an array of {@link ColorInt} which can be used for drawing the selector. Currently we
+     * support an array of length 2 only
+     *
+     * @return an array of length 2 representing the color of the selector
+     */
+    @ColorInt
+    int[] getSelectorColor();
 }

@@ -25,14 +25,6 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.annotation.ColorInt;
-import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
-import androidx.appcompat.app.AppCompatDialogFragment;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
 import android.util.Log;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
@@ -44,6 +36,14 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import androidx.annotation.ColorInt;
+import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatDialogFragment;
+import androidx.core.content.ContextCompat;
 
 import com.wdullaer.materialdatetimepicker.HapticFeedbackController;
 import com.wdullaer.materialdatetimepicker.R;
@@ -332,6 +332,17 @@ public class TimePickerDialog extends AppCompatDialogFragment implements
     @Override
     public int getAccentColor() {
         return mAccentColor;
+    }
+
+    @Nullable
+    @Override
+    public Integer getCircleViewColor() {
+        return mAccentColor;
+    }
+
+    @Override
+    public int[] getSelectorColor() {
+        return new int[] {ContextCompat.getColor(requireContext(), R.color.mdtp_button_color), ContextCompat.getColor(requireContext(), R.color.mdtp_selector_color)};
     }
 
     /**
@@ -762,7 +773,6 @@ public class TimePickerDialog extends AppCompatDialogFragment implements
             dismiss();
         });
         mOkButton.setOnKeyListener(keyboardListener);
-        mOkButton.setTypeface(ResourcesCompat.getFont(context, R.font.robotomedium));
         if(mOkString != null) mOkButton.setText(mOkString);
         else mOkButton.setText(mOkResid);
 
@@ -771,7 +781,6 @@ public class TimePickerDialog extends AppCompatDialogFragment implements
             tryVibrate();
             if (getDialog() != null) getDialog().cancel();
         });
-        mCancelButton.setTypeface(ResourcesCompat.getFont(context, R.font.robotomedium));
         if(mCancelString != null) mCancelButton.setText(mCancelString);
         else mCancelButton.setText(mCancelResid);
         mCancelButton.setVisibility(isCancelable() ? View.VISIBLE : View.GONE);
@@ -990,9 +999,9 @@ public class TimePickerDialog extends AppCompatDialogFragment implements
         view.findViewById(R.id.mdtp_time_display).setBackgroundColor(mAccentColor);
 
         // Button text can have a different color
-        if (mOkColor == null) mOkColor = mAccentColor;
+        if (mOkColor == null) mOkColor = ContextCompat.getColor(context, R.color.mdtp_white);
         mOkButton.setTextColor(mOkColor);
-        if (mCancelColor == null) mCancelColor = mAccentColor;
+        if (mCancelColor == null) mCancelColor = ContextCompat.getColor(context, R.color.mdtp_white);
         mCancelButton.setTextColor(mCancelColor);
 
         if(getDialog() == null) {
@@ -1004,8 +1013,8 @@ public class TimePickerDialog extends AppCompatDialogFragment implements
         int darkBackgroundColor = ContextCompat.getColor(context, R.color.mdtp_light_gray);
         int lightGray = ContextCompat.getColor(context, R.color.mdtp_light_gray);
 
-        mTimePicker.setBackgroundColor(mThemeDark? lightGray : circleBackground);
-        view.findViewById(R.id.mdtp_time_picker_dialog).setBackgroundColor(mThemeDark ? darkBackgroundColor : backgroundColor);
+        mTimePicker.setBackgroundColor(mAccentColor);
+        view.findViewById(R.id.mdtp_time_picker_dialog).setBackgroundColor(mAccentColor);
         return view;
     }
 

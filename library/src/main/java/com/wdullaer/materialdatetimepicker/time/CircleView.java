@@ -60,7 +60,7 @@ public class CircleView extends View {
         Resources res = context.getResources();
 
         int colorRes = controller.isThemeDark() ? R.color.mdtp_circle_background_dark_theme : R.color.mdtp_circle_color;
-        mCircleColor = ContextCompat.getColor(context, colorRes);
+        mCircleColor = controller.getCircleViewColor() != null ? controller.getCircleViewColor() : colorRes;
         mDotColor = controller.getAccentColor();
         mPaint.setAntiAlias(true);
 

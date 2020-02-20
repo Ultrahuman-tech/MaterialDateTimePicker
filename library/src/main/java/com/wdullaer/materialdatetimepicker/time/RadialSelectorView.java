@@ -24,9 +24,14 @@ import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Shader;
 import android.util.Log;
 import android.view.View;
+
+import androidx.annotation.ColorInt;
 
 import com.wdullaer.materialdatetimepicker.R;
 import com.wdullaer.materialdatetimepicker.Utils;
@@ -49,7 +54,7 @@ public class RadialSelectorView extends View {
     private final Paint mPaint = new Paint();
 
     private boolean mIsInitialized;
-    private boolean mDrawValuesReady;
+    private boolean mDrawValuesReady; // set once in view lifetime
 
     private float mCircleRadiusMultiplier;
     private float mAmPmCircleRadiusMultiplier;
@@ -62,9 +67,9 @@ public class RadialSelectorView extends View {
     private boolean mHasInnerCircle;
     private int mSelectionAlpha;
 
-    private int mXCenter;
-    private int mYCenter;
-    private int mCircleRadius;
+    private int mXCenter; // set once in view lifetime
+    private int mYCenter; // set once in view lifetime
+    private int mCircleRadius; // set once in view lifetime
     private float mTransitionMidRadiusMultiplier;
     private float mTransitionEndRadiusMultiplier;
     private int mLineLength;
@@ -74,6 +79,11 @@ public class RadialSelectorView extends View {
     private int mSelectionDegrees;
     private double mSelectionRadians;
     private boolean mForceDrawDot;
+    private LinearGradient linearGradient;
+    @ColorInt
+    private int selectorStartColor;
+    @ColorInt
+    private int selectorEndColor;
 
     public RadialSelectorView(Context context) {
         super(context);
@@ -102,8 +112,10 @@ public class RadialSelectorView extends View {
 
         Resources res = context.getResources();
 
-        int accentColor = controller.getAccentColor();
-        mPaint.setColor(accentColor);
+        int[] colors = controller.getSelectorColor();
+        selectorStartColor = colors[0];
+        selectorEndColor = colors[1];
+        mPaint.setColor(selectorEndColor);
         mPaint.setAntiAlias(true);
 
         mSelectionAlpha = controller.isThemeDark() ? SELECTED_ALPHA_THEME_DARK : SELECTED_ALPHA;
@@ -289,27 +301,41 @@ public class RadialSelectorView extends View {
         int pointX = mXCenter + (int) (mLineLength * Math.sin(mSelectionRadians));
         int pointY = mYCenter - (int) (mLineLength * Math.cos(mSelectionRadians));
 
+        // Draw the center circle
+        mPaint.setAlpha(mSelectionAlpha);
+        mPaint.setColor(selectorStartColor);
+        mPaint.setShader(null);
+        canvas.drawCircle(mXCenter, mYCenter, (mSelectionRadius * 1.0f / 7), mPaint);
+
         // Draw the selection circle.
         mPaint.setAlpha(mSelectionAlpha);
+        mPaint.setColor(selectorEndColor);
+        mPaint.setShader(null);
         canvas.drawCircle(pointX, pointY, mSelectionRadius, mPaint);
 
-        if (mForceDrawDot | mSelectionDegrees % 30 != 0) {
+        if (/**mForceDrawDot | **/mSelectionDegrees % 30 != 0) {
             // We're not on a direct tick (or we've been told to draw the dot anyway).
             mPaint.setAlpha(FULL_ALPHA);
-            canvas.drawCircle(pointX, pointY, (mSelectionRadius * 2 / 7), mPaint);
-        } else {
-            // We're not drawing the dot, so shorten the line to only go as far as the edge of the
-            // selection circle.
-            int lineLength = mLineLength;
-            lineLength -= mSelectionRadius;
-            pointX = mXCenter + (int) (lineLength * Math.sin(mSelectionRadians));
-            pointY = mYCenter - (int) (lineLength * Math.cos(mSelectionRadians));
+            mPaint.setColor(Color.WHITE);
+            mPaint.setShader(null);
+            canvas.drawCircle(pointX, pointY, (mSelectionRadius * 0.5f / 7), mPaint);
         }
 
         // Draw the line from the center of the circle.
+        int lineStartX = mXCenter;
+        int lineStartY = mYCenter;
+        int lineLength = mLineLength;
+        lineLength -= mSelectionRadius;
+        int lineEndX = mXCenter + (int) (lineLength * Math.sin(mSelectionRadians));
+        int lineEndY = mYCenter - (int) (lineLength * Math.cos(mSelectionRadians));
         mPaint.setAlpha(255);
         mPaint.setStrokeWidth(3);
-        canvas.drawLine(mXCenter, mYCenter, pointX, pointY, mPaint);
+        // todo optimise this
+        // todo optimise the start point of the line too.
+        linearGradient = new LinearGradient(lineStartX, lineStartY, lineEndX, lineEndY,
+                selectorStartColor, selectorEndColor, Shader.TileMode.MIRROR);
+        mPaint.setShader(linearGradient);
+        canvas.drawLine(lineStartX, lineStartY, lineEndX, lineEndY, mPaint);
     }
 
     public ObjectAnimator getDisappearAnimator() {
@@ -394,5 +420,9 @@ public class RadialSelectorView extends View {
                 selectorView.invalidate();
             }
         }
+    }
+
+    private void calculateFields() {
+
     }
 }
