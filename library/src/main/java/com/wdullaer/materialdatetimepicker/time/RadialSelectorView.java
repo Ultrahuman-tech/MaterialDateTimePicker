@@ -56,16 +56,16 @@ public class RadialSelectorView extends View {
     private boolean mIsInitialized;
     private boolean mDrawValuesReady; // set once in view lifetime
 
-    private float mCircleRadiusMultiplier;
-    private float mAmPmCircleRadiusMultiplier;
-    private float mInnerNumbersRadiusMultiplier;
-    private float mOuterNumbersRadiusMultiplier;
+    private float mCircleRadiusMultiplier; // set once in view lifetime
+    private float mAmPmCircleRadiusMultiplier; // set once in view lifetime
+    private float mInnerNumbersRadiusMultiplier; // set once in view lifetime
+    private float mOuterNumbersRadiusMultiplier; // set once in view lifetime
     private float mNumbersRadiusMultiplier;
-    private float mSelectionRadiusMultiplier;
+    private float mSelectionRadiusMultiplier; // set once in view lifetime
     private float mAnimationRadiusMultiplier;
     private boolean mIs24HourMode;
-    private boolean mHasInnerCircle;
-    private int mSelectionAlpha;
+    private boolean mHasInnerCircle; // set once in view lifetime
+    private int mSelectionAlpha; // set once in view lifetime
 
     private int mXCenter; // set once in view lifetime
     private int mYCenter; // set once in view lifetime
@@ -84,6 +84,10 @@ public class RadialSelectorView extends View {
     private int selectorStartColor;
     @ColorInt
     private int selectorEndColor;
+    private int selectorLineStartX;
+    private int selectorLineStartY;
+    private int selectorLineEndX;
+    private int selectorLineEndY;
 
     public RadialSelectorView(Context context) {
         super(context);
@@ -152,6 +156,7 @@ public class RadialSelectorView extends View {
         mTransitionEndRadiusMultiplier = 1f + (0.3f * (disappearsOut? 1 : -1));
         mInvalidateUpdateListener = new InvalidateUpdateListener(this);
 
+        calculateLineLength(); // initial calculation
         setSelection(selectionDegrees, isInnerCircle, false);
         mIsInitialized = true;
     }
@@ -176,6 +181,9 @@ public class RadialSelectorView extends View {
             } else {
                 mNumbersRadiusMultiplier = mOuterNumbersRadiusMultiplier;
             }
+            calculateLineLength(); // recalculate
+        } else {
+            calculateSelectorGradient();
         }
     }
 
@@ -193,6 +201,7 @@ public class RadialSelectorView extends View {
     @SuppressWarnings("unused")
     public void setAnimationRadiusMultiplier(float animationRadiusMultiplier) {
         mAnimationRadiusMultiplier = animationRadiusMultiplier;
+        calculateLineLength(); // recalculate
     }
 
     public int getDegreesFromCoords(float pointX, float pointY, boolean forceLegal,
@@ -292,12 +301,12 @@ public class RadialSelectorView extends View {
             }
 
             mSelectionRadius = (int) (mCircleRadius * mSelectionRadiusMultiplier);
+            calculateLineLength(); // calculate after getting circle radius
 
             mDrawValuesReady = true;
         }
 
         // Calculate the current radius at which to place the selection circle.
-        mLineLength = (int) (mCircleRadius * mNumbersRadiusMultiplier * mAnimationRadiusMultiplier);
         int pointX = mXCenter + (int) (mLineLength * Math.sin(mSelectionRadians));
         int pointY = mYCenter - (int) (mLineLength * Math.cos(mSelectionRadians));
 
@@ -313,7 +322,7 @@ public class RadialSelectorView extends View {
         mPaint.setShader(null);
         canvas.drawCircle(pointX, pointY, mSelectionRadius, mPaint);
 
-        if (/**mForceDrawDot | **/mSelectionDegrees % 30 != 0) {
+        if (/**mForceDrawDot | **/mSelectionDegrees % 30 != 0) { //  todo check this bug
             // We're not on a direct tick (or we've been told to draw the dot anyway).
             mPaint.setAlpha(FULL_ALPHA);
             mPaint.setColor(Color.WHITE);
@@ -322,20 +331,10 @@ public class RadialSelectorView extends View {
         }
 
         // Draw the line from the center of the circle.
-        int lineStartX = mXCenter;
-        int lineStartY = mYCenter;
-        int lineLength = mLineLength;
-        lineLength -= mSelectionRadius;
-        int lineEndX = mXCenter + (int) (lineLength * Math.sin(mSelectionRadians));
-        int lineEndY = mYCenter - (int) (lineLength * Math.cos(mSelectionRadians));
         mPaint.setAlpha(255);
         mPaint.setStrokeWidth(3);
-        // todo optimise this
-        // todo optimise the start point of the line too.
-        linearGradient = new LinearGradient(lineStartX, lineStartY, lineEndX, lineEndY,
-                selectorStartColor, selectorEndColor, Shader.TileMode.MIRROR);
         mPaint.setShader(linearGradient);
-        canvas.drawLine(lineStartX, lineStartY, lineEndX, lineEndY, mPaint);
+        canvas.drawLine(selectorLineStartX, selectorLineStartY, selectorLineEndX, selectorLineEndY, mPaint);
     }
 
     public ObjectAnimator getDisappearAnimator() {
@@ -422,7 +421,28 @@ public class RadialSelectorView extends View {
         }
     }
 
-    private void calculateFields() {
+    /**
+     * Calculate {@link #mLineLength}. This will invoke a recalculation of {@link #linearGradient}.
+     * This allocation may be costly hence this should not be called on every {@link #onDraw(Canvas)}
+     */
+    private void calculateLineLength() {
+        mLineLength = (int) (mCircleRadius * mNumbersRadiusMultiplier * mAnimationRadiusMultiplier);
+        calculateSelectorGradient();
+    }
 
+    /**
+     * Calculate {@link #linearGradient}. Also set {@link #selectorLineStartX},
+     * {@link #selectorLineStartY}, {@link #selectorLineEndX} and {@link #selectorLineEndY}.
+     * This allocation may be costly hence this should not be called on every {@link #onDraw(Canvas)}
+     */
+    private void calculateSelectorGradient() {
+        selectorLineStartX = mXCenter;
+        selectorLineStartY = mYCenter;
+        int lineLength = mLineLength;
+        lineLength -= mSelectionRadius;
+        selectorLineEndX = mXCenter + (int) (lineLength * Math.sin(mSelectionRadians));
+        selectorLineEndY = mYCenter - (int) (lineLength * Math.cos(mSelectionRadians));
+        linearGradient = new LinearGradient(selectorLineStartX, selectorLineStartY, selectorLineEndX,
+                selectorLineEndY, selectorStartColor, selectorEndColor, Shader.TileMode.MIRROR);
     }
 }
