@@ -1,11 +1,18 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="8dp"
-    android:height="12dp"
-    android:viewportWidth="8"
-    android:viewportHeight="12"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#000000"
     android:autoMirrored="true">
+
+    <!-- Rounded-corner version of ic_chevron_right: same chevron geometry, but drawn as a
+         stroked polyline with round line caps and joins so the tip and ends are rounded. -->
     <path
-        android:pathData="M0.551,0.351C0.984,-0.081 1.665,-0.114 2.135,0.252L2.249,0.351L7.049,5.151C7.481,5.584 7.514,6.265 7.148,6.735L7.049,6.849L2.249,11.649C1.78,12.117 1.02,12.117 0.551,11.649C0.119,11.216 0.086,10.535 0.452,10.064L0.551,9.951L4.502,6L0.551,2.049C0.119,1.616 0.086,0.935 0.452,0.465L0.551,0.351Z"
-        android:fillColor="#9946494D"
-        android:fillType="evenOdd"/>
+        android:pathData="M9,6L15,12L9,18"
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+
 </vector>
