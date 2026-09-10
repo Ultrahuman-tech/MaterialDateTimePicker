@@ -1,0 +1,58 @@
+name: Security Scan
+
+# Calls the shared SAST/SCA reusable workflows from Ultrahuman-tech/actions.
+# All are report-only (never fail the build) - see that repo's README for the
+# rationale and rollout plan.
+#
+# Trivy and Opengrep run on every PR/push. Bearer (PII/PHI data-flow) and
+# Brakeman are lower-frequency signals rather than PR gates, so they run on
+# the schedule trigger (or manually via workflow_dispatch).
+#
+# Brakeman is intentionally omitted: it is Rails-only and this repo is not
+# a Rails app.
+#
+# Requires SAST_AWS_ACCESS_KEY_ID / SAST_AWS_SECRET_ACCESS_KEY, which are
+# ORG-level secrets - this repo needs no copy of its own. If they do not
+# resolve the scans still run and still comment on the PR; only the upload
+# that feeds the Krypto dashboard is skipped, so a green run is not by
+# itself evidence that reports are arriving.
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '30 4 * * 1' # weekly, Monday 04:30 UTC
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  trivy:
+    name: Trivy Scan
+    if: github.event_name != 'schedule'
+    uses: Ultrahuman-tech/actions/.github/workflows/trivy-scan.yml@main
+    secrets:
+      aws-access-key-id: ${{ secrets.SAST_AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.SAST_AWS_SECRET_ACCESS_KEY }}
+
+  opengrep:
+    name: Opengrep Scan
+    if: github.event_name != 'schedule'
+    uses: Ultrahuman-tech/actions/.github/workflows/opengrep-scan.yml@main
+    secrets:
+      aws-access-key-id: ${{ secrets.SAST_AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.SAST_AWS_SECRET_ACCESS_KEY }}
+
+  bearer:
+    name: Bearer Scan
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    uses: Ultrahuman-tech/actions/.github/workflows/bearer-scan.yml@main
+    secrets:
+      aws-access-key-id: ${{ secrets.SAST_AWS_ACCESS_KEY_ID }}
+      aws-secret-access-key: ${{ secrets.SAST_AWS_SECRET_ACCESS_KEY }}
